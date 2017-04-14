@@ -25,8 +25,6 @@
 
 #include <utils/Log.h>
 
-#include "include/AACEncoder.h"
-
 #include "include/ESDS.h"
 
 #include <binder/IServiceManager.h>
@@ -68,39 +66,6 @@ const static int64_t kBufferFilledEventTimeOutNs = 3000000000LL;
 // 1000 is more than enough for us to tell whether the omx
 // component in question is buggy or not.
 const static uint32_t kMaxColorFormatSupported = 1000;
-
-#define FACTORY_CREATE_ENCODER(name) \
-static sp<MediaSource> Make##name(const sp<MediaSource> &source, const sp<MetaData> &meta) { \
-    return new name(source, meta); \
-}
-
-#define FACTORY_REF(name) { #name, Make##name },
-
-FACTORY_CREATE_ENCODER(AACEncoder)
-
-static sp<MediaSource> InstantiateSoftwareEncoder(
-        const char *name, const sp<MediaSource> &source,
-        const sp<MetaData> &meta) {
-    struct FactoryInfo {
-        const char *name;
-        sp<MediaSource> (*CreateFunc)(const sp<MediaSource> &, const sp<MetaData> &);
-    };
-
-    static const FactoryInfo kFactoryInfo[] = {
-        FACTORY_REF(AACEncoder)
-    };
-    for (size_t i = 0;
-         i < sizeof(kFactoryInfo) / sizeof(kFactoryInfo[0]); ++i) {
-        if (!strcmp(name, kFactoryInfo[i].name)) {
-            return (*kFactoryInfo[i].CreateFunc)(source, meta);
-        }
-    }
-
-    return NULL;
-}
-
-#undef FACTORY_CREATE_ENCODER
-#undef FACTORY_REF
 
 #define CODEC_LOGI(x, ...) ALOGI("[%s] " x, mComponentName, ##__VA_ARGS__)
 #define CODEC_LOGV(x, ...) ALOGV("[%s] " x, mComponentName, ##__VA_ARGS__)
@@ -314,17 +279,6 @@ sp<MediaSource> OMXCodec::Create(
             tmp.append(".secure");
 
             componentName = tmp.c_str();
-        }
-
-        if (createEncoder) {
-            sp<MediaSource> softwareCodec =
-                InstantiateSoftwareEncoder(componentName, source, meta);
-
-            if (softwareCodec != NULL) {
-                ALOGV("Successfully allocated software codec '%s'", componentName);
-
-                return softwareCodec;
-            }
         }
 
         ALOGV("Attempting to allocate OMX node '%s'", componentName);
