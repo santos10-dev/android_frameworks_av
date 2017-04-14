@@ -70,7 +70,7 @@ const static int64_t kBufferFilledEventTimeOutNs = 3000000000LL;
 const static uint32_t kMaxColorFormatSupported = 1000;
 
 #define FACTORY_CREATE_ENCODER(name) \
-static sp<IMediaSource> Make##name(const sp<IMediaSource> &source, const sp<MetaData> &meta) { \
+static sp<MediaSource> Make##name(const sp<MediaSource> &source, const sp<MetaData> &meta) { \
     return new name(source, meta); \
 }
 
@@ -78,12 +78,12 @@ static sp<IMediaSource> Make##name(const sp<IMediaSource> &source, const sp<Meta
 
 FACTORY_CREATE_ENCODER(AACEncoder)
 
-static sp<IMediaSource> InstantiateSoftwareEncoder(
-        const char *name, const sp<IMediaSource> &source,
+static sp<MediaSource> InstantiateSoftwareEncoder(
+        const char *name, const sp<MediaSource> &source,
         const sp<MetaData> &meta) {
     struct FactoryInfo {
         const char *name;
-        sp<IMediaSource> (*CreateFunc)(const sp<IMediaSource> &, const sp<MetaData> &);
+        sp<MediaSource> (*CreateFunc)(const sp<MediaSource> &, const sp<MetaData> &);
     };
 
     static const FactoryInfo kFactoryInfo[] = {
@@ -269,10 +269,10 @@ uint32_t OMXCodec::getComponentQuirks(
 }
 
 // static
-sp<IMediaSource> OMXCodec::Create(
+sp<MediaSource> OMXCodec::Create(
         const sp<IOMX> &omx,
         const sp<MetaData> &meta, bool createEncoder,
-        const sp<IMediaSource> &source,
+        const sp<MediaSource> &source,
         const char *matchComponentName,
         uint32_t flags,
         const sp<ANativeWindow> &nativeWindow) {
@@ -317,7 +317,7 @@ sp<IMediaSource> OMXCodec::Create(
         }
 
         if (createEncoder) {
-            sp<IMediaSource> softwareCodec =
+            sp<MediaSource> softwareCodec =
                 InstantiateSoftwareEncoder(componentName, source, meta);
 
             if (softwareCodec != NULL) {
@@ -1408,7 +1408,7 @@ OMXCodec::OMXCodec(
         bool isEncoder,
         const char *mime,
         const char *componentName,
-        const sp<IMediaSource> &source,
+        const sp<MediaSource> &source,
         const sp<ANativeWindow> &nativeWindow)
     : mOMX(omx),
       mOMXLivesLocally(omx->livesLocally(node, getpid())),
