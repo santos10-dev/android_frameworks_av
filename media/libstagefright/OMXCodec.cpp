@@ -344,7 +344,7 @@ sp<IMediaSource> OMXCodec::Create(
             }
         }
 
-        status_t err = omx->allocateNode(componentName, observer, &node);
+        status_t err = omx->allocateNode(componentName, observer, NULL, &node);
         if (err == OK) {
             ALOGV("Successfully allocated OMX node '%s'", componentName);
 
@@ -1666,9 +1666,9 @@ status_t OMXCodec::allocateBuffersOnPort(OMX_U32 portIndex) {
             if (mOMXLivesLocally) {
                 mem.clear();
 
-                err = mOMX->allocateBuffer(
+                err = mOMX->allocateSecureBuffer(
                         mNode, portIndex, def.nBufferSize, &buffer,
-                        &info.mData);
+                        &info.mData, NULL);
             } else {
                 err = mOMX->allocateBufferWithBackup(
                         mNode, portIndex, mem, &buffer, mem->size());
@@ -1678,9 +1678,9 @@ status_t OMXCodec::allocateBuffersOnPort(OMX_U32 portIndex) {
             if (mOMXLivesLocally) {
                 mem.clear();
 
-                err = mOMX->allocateBuffer(
+                err = mOMX->allocateSecureBuffer(
                         mNode, portIndex, def.nBufferSize, &buffer,
-                        &info.mData);
+                        &info.mData, NULL);
             } else {
                 err = mOMX->allocateBufferWithBackup(
                         mNode, portIndex, mem, &buffer, mem->size());
@@ -1809,13 +1809,13 @@ status_t OMXCodec::allocateOutputBuffersFromNativeWindow() {
         usage |= GRALLOC_USAGE_PROTECTED;
     }
 
-    err = setNativeWindowSizeFormatAndUsage(
+    err = android::setNativeWindowSizeFormatAndUsage(
             mNativeWindow.get(),
             def.format.video.nFrameWidth,
             def.format.video.nFrameHeight,
             def.format.video.eColorFormat,
             rotationDegrees,
-            usage | GRALLOC_USAGE_HW_TEXTURE | GRALLOC_USAGE_EXTERNAL_DISP);
+            usage | GRALLOC_USAGE_HW_TEXTURE | GRALLOC_USAGE_EXTERNAL_DISP, false);
     if (err != 0) {
         return err;
     }
@@ -4008,7 +4008,7 @@ status_t OMXCodec::initNativeWindow() {
     // Enable use of a GraphicBuffer as the output for this node.  This must
     // happen before getting the IndexParamPortDefinition parameter because it
     // will affect the pixel format that the node reports.
-    status_t err = mOMX->enableGraphicBuffers(mNode, kPortIndexOutput, OMX_TRUE);
+    status_t err = mOMX->enableNativeBuffers(mNode, kPortIndexOutput, OMX_TRUE, OMX_TRUE);
     if (err != 0) {
         return err;
     }
@@ -4299,7 +4299,7 @@ status_t QueryCodec(
 
     sp<OMXCodecObserver> observer = new OMXCodecObserver;
     IOMX::node_id node;
-    status_t err = omx->allocateNode(componentName, observer, &node);
+    status_t err = omx->allocateNode(componentName, observer, NULL, &node);
 
     if (err != OK) {
         return err;
